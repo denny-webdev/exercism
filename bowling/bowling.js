@@ -7,6 +7,7 @@
 
 export class Bowling {
   constructor(){
+    this.isFillRoll = [];
     this.awaitingTotals = [];
     this.rolls = [];
     this.total = 0;
@@ -27,13 +28,13 @@ export class Bowling {
     }
     // console.log("length", this.frames.length)
     //end of game score
-    if(this.frames.length >= 10){
+    if(this.frames.length >= 10 && !this.isFillRoll){ 
       throw new Error('Cannot roll after game is over')  
     }
     //  console.log(roll) 
     this.rolls.push(roll)
     this.handleAwaitingTotals(roll)
-
+    if(this.isFillRoll)
     //reset rolls
     // if(rolls.length === 10){
     //   frames.push(rolls)
@@ -43,12 +44,25 @@ export class Bowling {
     if(roll === 10 && this.rolls.length === 1){
       this.frames.push(roll)
       this.handleFrameEnd();
+      if(this.frames.length === 9){
+        if(!this.isFillRoll){
+          const endGameStrikeObject = {
+            endGame: true, 
+            rollsToAdd: 2,
+          }
+          this.awaitingTotals.push(endGameStrikeObject)
+          this.total += roll  
+       
+        }
+      }else
+    {
       const strikeObject = {
         strike: true,
         rollsToAdd: 2
       }
       this.awaitingTotals.push(strikeObject)
       this.total += roll
+    }
       // console.log(strikeObject)
     }
  
@@ -64,15 +78,29 @@ export class Bowling {
       
       //check if its a spare
       if(sum === 10){
-        const spareObject = {
-          strike: false,
-          rollsToAdd: 1
-          
+        if(this.frames.length >= 10){
+          if(!this.isFillRoll){
+            const endGameStrikeObject = {
+              endGame: true, 
+              rollsToAdd: 2,
+            }
+            this.awaitingTotals.push(endGameStrikeObject)
+          }
+       
+        }else{
+
+          const spareObject = {
+            strike: false,
+            rollsToAdd: 1
+            
+            
+          }
+          this.awaitingTotals.push(spareObject)
         }
-        this.awaitingTotals.push(spareObject)
         // console.log(spareObject)
       }
         this.total += sum
+      
 
     }
     console.log("score", this.total)
@@ -95,11 +123,15 @@ export class Bowling {
   handleAwaitingTotals(roll) {
     const updatingAwaitingTotals = [];
     this.awaitingTotals.forEach((awaitingTotal)=> {
-      // const strike = awaitingTotal.strike;
+      const endGame = awaitingTotal.endGame
+      if(endGame){
+        this.isFillRoll = true;
+      }
       let rollsToAdd = awaitingTotal.rollsToAdd;
       this.total += roll 
       rollsToAdd -= 1  
       if(rollsToAdd <= 0){
+        this.isFillRoll = false;
         return 
       } 
       const updatedObject = {...awaitingTotal}
